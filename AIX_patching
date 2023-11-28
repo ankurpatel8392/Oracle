@@ -1,0 +1,239 @@
+DR Patching: CR202306268801465
+
+10.65.1.93-oracle-a01rcbemdb1a bnKXv0SJ:S3H
+,10.65.1.97-oracle-a01rcbemdb2a, Xn0Kfclr]Kg?
+10.65.1.93-root-a01rcbemdb1a,
+10.65.1.97-root-a01rcbemdb2a
+10.65.1.2
+
+a01rcbemdb1a    10.196.240.171 
+PROD:
+a01gcbemdb1a	10.65.1.2	ASM
+
+--------------------------------------------------------Finacle patching---------------------------------------------------
+
+--Example for CBSG server
+
+====> Enable blackout for the servers
+
+Step 1)Sanity reboot
+
+On confirmation from app team stop listeners and instance on Node2 
+--srvctl stop listener -listener LISTENER_CBSG -node a01gcbsgdb2a
+--srvctl stop listener -listener LISTENER_GCIN -node a01gcbsgdb2a
+--srvctl stop listener -listener LISTENER_FISG -node a01gcbsgdb2a
+--srvctl stop listener -listener LISTENER_LMSG -node a01gcbsgdb2a
+--srvctl stop listener -listener LISTENER -node a01gcbsgdb2a
+
+Inform App team to restart services to point to node1 
+
+On confirmation stop DB and cluster services. First stop instance and then stop cluster
+--srvctl stop instance -i CBSG2 -d CBSG
+--srvctl stop instance -i GCIN2 -d GCIN
+--srvctl stop instance -i LMSG2 -d LMSG
+--srvctl stop instance -i FISG2 -d FISG
+
+--crsctl stop crs
+
+Take backup of GRID and RDBMS home and place latest OPATCH utility in both homes
+
+--as root user
+tar -pcvf /u01/src/patch/oracle_grid_bkup.tar grid
+
+--as oracle user
+tar -pcvf /u01/src/patch/oracle_home_bkup.tar dbhome_1
+
+
+Start cluster and Instance on DB2A
+
+--crsctl start crs
+
+--srvctl start instance -i CBSG2 -d CBSG
+--srvctl start instance -i GCIN2 -d GCIN
+--srvctl start instance -i LMSG2 -d LMSG
+--srvctl start instance -i FISG2 -d FISG
+
+Inform App team to restart services to point to both nodes
+
+On confirmation from app team stop listeners on Node1
+--srvctl stop listener -listener LISTENER_CBSG -node a01gcbsgdb1a
+--srvctl stop listener -listener LISTENER_GCIN -node a01gcbsgdb1a
+--srvctl stop listener -listener LISTENER_FISG -node a01gcbsgdb1a
+--srvctl stop listener -listener LISTENER_LMSG -node a01gcbsgdb1a
+--srvctl stop listener -listener LISTENER -node a01gcbsgdb1a
+
+Inform App team to restart services to point to node2
+
+On confirmation stop instance and cluster services. First stop instance and then stop cluster
+
+--srvctl stop instance -i CBSG1 -d CBSG
+--srvctl stop instance -i GCIN1 -d GCIN
+--srvctl stop instance -i LMSG1 -d LMSG
+--srvctl stop instance -i FISG1 -d FISG
+
+--crsctl stop crs
+
+Take backup of GRID and RDBMS home as root user and place latest OPATCH utility in both homes
+
+--as root user
+tar -pcvf /u01/src/patch/oracle_grid_bkup.tar grid
+
+--as oracle user
+tar -pcvf /u01/src/patch/oracle_home_bkup.tar dbhome_1
+
+Start cluster services and proceed with patching
+
+--crsctl start crs
+
+Step 2) As "oracle" user please run the following commands: (Opatch version check)
+=============================================================
+/u01/app/19.0.0/grid/OPatch/opatch version -oh /u01/app/19.0.0/grid -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc
+
+Step 3) As "oracle" user please run the following commands: (list current patch level)
+=============================================================
+/u01/app/19.0.0/grid/OPatch/opatch lsinventory -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+
+Step 4) As "oracle" user please run the following commands: (Component check) Change the home version and patch location and sub patches
+=============================================================
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckComponents -ph /u01/src/patch/35037840/33575402 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckComponents -ph /u01/src/patch/35037840/35042068 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckComponents -ph /u01/src/patch/35037840/35050325 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckComponents -ph /u01/src/patch/35037840/35050331 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckComponents -ph /u01/src/patch/35037840/35226579 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckComponents -ph /u01/src/patch/35037840/35107512 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+
+Step 5) As "oracle" user please run the following commands:(Conflict check) Change the home version and patch location and sub patches
+=============================================================
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/33575402 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/35042068 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/35050325 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/35050331 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/33575402 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+/u01/app/19.0.0/grid/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/35107512 -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid
+
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/33575402 -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1
+																																											  
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/35042068 -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1
+																																											  
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/35050325 -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1
+																																											  
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/35050331 -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1
+																																											  
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/33575402 -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1
+																																											  
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch prereq CheckConflictAgainstOH -ph /u01/src/patch/35037840/35107512 -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1
+35226579
+
+Step 6) As "root" user run the following commands:( To unlock the cluster to apply the patch manually)
+===========================================================
+export PATH=$PATH:/usr/local/bin/
+$. oraenv
+--and pass +ASM1
+
+execute--
+/u01/app/19.0.0/grid/perl/bin/perl -I/u01/app/19.0.0/grid/perl/lib -I/u01/app/19.0.0/grid/crs/install /u01/app/19.0.0/grid/crs/install/rootcrs.pl -prepatch
+
+
+===> rollback oneoff patch
+As oracle user 
+
+/u01/app/19.0.0/grid/OPatch/opatch rollback -id 33757307 -oh /u01/app/19.0.0/grid -silent
+
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch rollback -id 33757307 -oh /u01/app/oracle/product/19.0.0/dbhome_1 -silent
+
+Step 7) As "oracle" user please run the following commands:(Creatin Base File and Applying patch) ( for 19c there will be 5 sub patches) (Please change patch location and sub patche details)
+=============================================================
+echo /u01/src/patch/33803476/33575402 > /u01/src/OraGI19_patchList
+
+echo /u01/src/patch/33803476/35042068 >> /u01/src/OraGI19_patchList
+
+echo /u01/src/patch/33803476/33575402 >> /u01/src/OraGI19_patchList
+
+echo /u01/src/patch/33803476/35050331 >> /u01/src/OraGI19_patchList
+
+echo /u01/src/patch/33803476/35050325 >> /u01/src/OraGI19_patchList
+
+echo /u01/src/patch/35107512/35107512 >> /u01/src/OraGI19_patchList
+
+/u01/app/19.0.0/grid/OPatch/opatch napply -phBaseFile /u01/src/OraGI19_patchList -local  -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid -silent
+
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch napply -phBaseFile /u01/src/OraGI19_patchList -local -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1 -silent
+
+Step 8) As "root" user please run the following commands: Adding rdbms home to cluster
+===========================================================
+/u01/app/19.0.0/grid/rdbms/install/rootadd_rdbms.sh
+
+Step 9) As "root" user please run the following commands:locking the cluster 
+===========================================================
+/u01/app/19.0.0/grid/perl/bin/perl -I/u01/app/19.0.0/grid/perl/lib -I/u01/app/19.0.0/grid/crs/install /u01/app/19.0.0/grid/crs/install/rootcrs.pl -postpatch
+
+Step 10) As "oracle" user start the instances
+=============================================
+--srvctl start instance -i CBKR -d CBKR1
+--srvctl start instance -i CBAU -d CBAU1
+--srvctl start instance -i FIEM -d FIEM1
+--srvctl start instance -i RMANDB -d RMANDB1
+
+--->Ensure all the listener and instances are up in Node 1.
+
+Step 11) As "oracle" user please run the following commands: Verifying patch is applied. (in 19C please berify all the sub patches)
+=============================================================
+GRID:
+/u01/app/19.0.0/grid/OPatch/opatch lsinventory -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid | grep 33575402
+
+/u01/app/19.0.0/grid/OPatch/opatch lsinventory -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid | grep 35042068
+
+/u01/app/19.0.0/grid/OPatch/opatch lsinventory -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid | grep 35050325
+
+/u01/app/19.0.0/grid/OPatch/opatch lsinventory -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid | grep 35050331
+
+/u01/app/19.0.0/grid/OPatch/opatch lsinventory -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid | grep 33575402
+
+/u01/app/19.0.0/grid/OPatch/opatch lsinventory -invPtrLoc /u01/app/19.0.0/grid/oraInst.loc -oh /u01/app/19.0.0/grid | grep 35107512
+
+RDBMS:
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch lsinventory -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1 | grep 33575402
+
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch lsinventory -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1 | grep 35042068
+
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch lsinventory -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1 | grep 35050325
+
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch lsinventory -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1 | grep 35050331
+
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch lsinventory -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1 | grep 33575402
+
+/u01/app/oracle/product/19.0.0/dbhome_1/OPatch/opatch lsinventory -invPtrLoc /u01/app/oracle/product/19.0.0/dbhome_1/oraInst.loc -oh /u01/app/oracle/product/19.0.0/dbhome_1 | grep 35107512
+
+
+
+---Perform the above steps in Node 2
+
+--srvctl stop listener -listener LISTENER_CBSG -node a01gcbsgdb2a
+--srvctl stop listener -listener LISTENER_GCIN -node a01gcbsgdb2a
+--srvctl stop listener -listener LISTENER_FISG -node a01gcbsgdb2a
+--srvctl stop listener -listener LISTENER_LMSG -node a01gcbsgdb2a
+--srvctl stop listener -listener LISTENER -node a01gcbsgdb2a
+
+--srvctl stop instance -i CBSG2 -d CBSG
+--srvctl stop instance -i GCIN2 -d GCIN
+--srvctl stop instance -i LMSG2 -d LMSG
+--srvctl stop instance -i FISG2 -d FISG
+
+--srvctl start instance -i CBSG2 -d CBSG
+--srvctl start instance -i GCIN2 -d GCIN
+--srvctl start instance -i LMSG2 -d LMSG
+--srvctl start instance -i FISG2 -d FISG
+
+---Run datapatch
